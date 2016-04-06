@@ -2,18 +2,18 @@
 #include <fstream>
 #include <vector>
 #include <string>
-#include <opencv2\opencv.hpp>
+#include <opencv2/opencv.hpp>
 
-#include "LIC.h"
+//#include "LIC.h"
 #include "LineExtraction.h"
 
 using namespace std;
 using namespace cv;
 
 //#define DBG
-
+/*
 //Tools
-void LICImage(vector<vector<Vec2d>> src, int n_xres, int n_yres, vector<vector<float>> m){
+void LICImage(vector<vector<Vec2d> > src, int n_xres, int n_yres, vector<vector<float> > m){
 	//float* pVectr = (float*)malloc(sizeof(float)* n_xres * n_yres * 2);
 	float* pVectr = new float[n_xres*n_yres*2];
 	for (int r = 0; r < n_yres; r++){
@@ -36,14 +36,14 @@ void LICImage(vector<vector<Vec2d>> src, int n_xres, int n_yres, vector<vector<f
 	delete[] pVectr;
 	delete[] licArr;
 }
-
+*/
 //Edge tangent filter
 //Input a gray image (L channel of Lab Image)
 //ETF for t times
 Mat ETF(Mat& src, int t){
 	//Initialize
 	Mat g0x, g0y;
-	vector<vector<float>> g0m(src.rows, vector<float>(src.cols));
+	vector<vector<float> > g0m(src.rows, vector<float>(src.cols));
 	Sobel(src, g0x, CV_32F, 1, 0, 3, 1, 0, BORDER_DEFAULT);
 	Sobel(src, g0y, CV_32F, 0, 1, 3, 1, 0, BORDER_DEFAULT);
 
@@ -58,7 +58,7 @@ Mat ETF(Mat& src, int t){
 	destroyWindow("g0y");
 #endif 
 
-	vector<vector<Vec2d>> t0(src.rows, vector<Vec2d>(src.cols));
+	vector<vector<Vec2d> > t0(src.rows, vector<Vec2d>(src.cols));
 	Mat g0mImg(src.size(), CV_32F);
 	for (int r = 0; r < src.rows; r++){
 		float* pgx = g0x.ptr<float>(r);
@@ -93,7 +93,7 @@ Mat ETF(Mat& src, int t){
 	//Filter for t times
 	//windows size
 	const int ws = 2;	
-	vector<vector<Vec2d>> t1(src.rows, vector<Vec2d>(src.cols));
+	vector<vector<Vec2d> > t1(src.rows, vector<Vec2d>(src.cols));
 	for (int i = 0; i < t; i++){
 		for (int r = 0; r < src.rows; r++){
 			for (int c = 0; c < src.cols; c++){
@@ -137,7 +137,7 @@ Mat ETF(Mat& src, int t){
 				count_zero++;
 		}
 	}
-	cout << "zero count: " << count_zero << endl;
+	//cout << "zero count: " << count_zero << endl;
 
 	return t_final;
 }
@@ -190,7 +190,7 @@ Mat FDoG(Mat src, Mat t){
 				h.at<float>(r, c) = src.at<float>(r, c)*(g_sigma_c - lo*g_sigma_s)*g_sigma_m;
 			}
 			else{
-				vector<vector<float>> curve(2*alpha+1, vector<float>(2*beta+1));
+				vector<vector<float> > curve(2*alpha+1, vector<float>(2*beta+1));
 				Point cur(c, r);
 				float he = 0;
 				//i, travel through the curve center at (c, r)
@@ -252,7 +252,7 @@ Mat FDoG(Mat src, Mat t){
 		}
 	}
 
-	showMinMaxVal(h, "originalVer: ");
+	//showMinMaxVal(h, "originalVer: ");
 	//Mat tmp_h;
 	//normalize(h, tmp_h, 0.0, 1.0, CV_MINMAX);
 	//imshow("orig", tmp_h);
@@ -339,7 +339,7 @@ Mat FBL(Mat src, Mat t, int iterations){
 					h.at<float>(r, c) = src.at<float>(r, c);
 				}
 				else{
-					vector<vector<float>> curve(2 * alpha + 1, vector<float>(2 * beta + 1));
+					vector<vector<float> > curve(2 * alpha + 1, vector<float>(2 * beta + 1));
 					vector<float> cg_arr(2 * alpha + 1);
 					Point cur(c, r);
 					float ve = 0;
@@ -441,9 +441,12 @@ Mat color_quantization(Mat src, int k){
 	return m;
 }
 
-int main(){
-	string path = "cat.jpg";
-	Mat img = imread("Img/"+path);
+int main(int argc, char* argv[]){
+	if(argc!=3){
+		printf("Usage: FbABS sourefile outputfile\n");
+		return -1;
+	}
+	Mat img = imread(argv[1]);
 	Mat img_lab;
 	vector<Mat> lab_channel;
 	Mat L_32f;
@@ -485,13 +488,15 @@ int main(){
 	Mat edge2 = npr::FDoG_myVer(L_32f, t, mp);
 	Mat edge3 = npr::FDoG(L_32f, t, mp, 3);
 
-	imshow("src", img);
-	imshow("lines", src_lines);
+	//imshow("src", img);
+	//imshow("lines", src_lines);
 	//imshow("quantization", src_fbl);
 	//imshow("result", result);
-	imshow("edge", edge);
-	imshow("edge2", edge2);
-	waitKey();
+	//imshow("edge", edge);
+	//imshow("edge2", edge2);
+	edge2.convertTo(edge2, CV_8UC3, 255.0);
+	imwrite(argv[2],edge2);
+	//waitKey();
 	//imwrite("Outputs/"+path, result);
 
 	//system("pause");
